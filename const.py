@@ -4,10 +4,9 @@ from telebot import types
 #  обычные переменные для работы (Поменяйте названия если это необходимо)
 FILE_PATH = r"C:\Telegramm_bot\data_passwords.json"
 
-REMOVE_FILE_PATH = r"C:\Telegramm_bot\remove_data.json"
 
 #  токен вашего бота (от @BotFather)
-TOKEN = "Your token"
+TOKEN = "7858899150:AAG9f0-jaMA-kzQuM5kpJZhOT6SQPbP_2UY"
 
 # example: "0123456789:xXxxXx-XxXx-xxxXXX012xxxXXxX45Xx"
 
