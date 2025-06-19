@@ -1,10 +1,9 @@
-from telebot import TeleBot, types
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton
+from telebot import TeleBot
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 import string
 import json
 import secrets
 from const import *
-
 
 
 bot = TeleBot(TOKEN)
@@ -26,6 +25,17 @@ def random_password(*, chat_id, long: str=12) -> str:
         password = ''.join(secrets.choice(chars) for _ in range(long))
     return password
 
+
+def keyboard_YES_or_NO():
+    keyboard = InlineKeyboardMarkup(row_width=2)
+    
+    # Добавляем кнопки для каждого языка
+    keyboard.add(
+        InlineKeyboardButton(NO, callback_data=NO),
+        InlineKeyboardButton(YES, callback_data=YES),
+    )
+    
+    return keyboard
 
    #  Функции бота
 
@@ -104,8 +114,23 @@ def Remove(*, message):
     pass
 
 #  удаление всех паролей (тест)
-def All_clear(*, message):
-    pass
+def All_clear(*, int_chat_id: int, call_id: int):
+    str_chat_id = str(int_chat_id)
+    
+    #  Читаем данные из файла
+    with open(FILE_PATH, "r") as file_read:
+        data = json.load(file_read)
+        if str_chat_id not in data:
+            bot.send_message(int_chat_id, TEXT_ERROR)
+            bot.answer_callback_query(call_id, TEXT_ERROR + NO)
+            return
+        del data[str_chat_id]
+
+    #  Удаляем все пароли и записываем вфайл
+    with open(FILE_PATH, "w") as file_write:
+        json.dump(data, file_write, indent=4)
+    bot.answer_callback_query(call_id, 'All your passwords are deleted' + R)
+    
 
 
 
@@ -121,6 +146,7 @@ def send_welcome(message):
             markup.row(*item_button)
         markup.add(NAME_COMMANDS[-1])
         bot.send_message(message.chat.id, FIRST_GREETING, reply_markup=markup)
+
 
 #  обработчик для кнопок (и функции add) бота
 @bot.message_handler(func=lambda message: True)
@@ -140,10 +166,20 @@ def process_the_button(message):
         bot.delete_my_commands()
         Find(message=message, mode=f"_[{R}]")
     elif text == "All clear ⚠️":
-        All_clear(message=message)
+        keyboard = keyboard_YES_or_NO()
+        bot.send_message(message.chat.id, "Are you sure you want to remove all the passwords?", reply_markup=keyboard)
     else:
         bot.send_message(int_chat_id, NO + " I didn't understand your command, please repeat it again !")
 
+@bot.callback_query_handler(func=lambda call: True)
+def callback_inline(call):
+    if call.message:
+        if call.data == YES:
+            All_clear(int_chat_id=call.message.chat.id, call_id=call.id)
+        elif call.data == NO:
+            bot.answer_callback_query(call.id, 'Cansel' + NO)
+        bot.edit_message_text(FIRST_GREETING, call.message.chat.id, call.message.message_id)
+        
 
 bot.set_my_commands(COMMAND_LIST)  #  добавление команд боту
 
